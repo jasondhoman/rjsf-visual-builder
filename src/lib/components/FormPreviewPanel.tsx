@@ -3,6 +3,7 @@ import validator from '@rjsf/validator-ajv8'
 import type { RegistryFieldsType, RegistryWidgetsType, RJSFSchema, TemplatesType, UiSchema } from '@rjsf/utils'
 import { Component, type ReactNode } from 'react'
 import './rjsf-preview.css'
+import { CollapsiblePanel } from './visual/CollapsiblePanel'
 
 interface FormPreviewPanelProps {
   schema: RJSFSchema
@@ -19,6 +20,12 @@ interface FormPreviewPanelProps {
   fields?: RegistryFieldsType
   /** Custom RJSF templates (e.g. `FieldTemplate`, `ArrayFieldTemplate`). */
   templates?: Partial<TemplatesType>
+  isOpen?: boolean
+  onOpenChange?: (open: boolean) => void
+  panelId?: string
+  onPanelDragStart?: (panelId: string) => void
+  onPanelDrop?: (panelId: string) => void
+  order?: number
 }
 
 interface PreviewErrorBoundaryState {
@@ -64,9 +71,15 @@ export function FormPreviewPanel({
   widgets,
   fields,
   templates,
+  isOpen,
+  onOpenChange,
+  panelId,
+  onPanelDragStart,
+  onPanelDrop,
+  order,
 }: FormPreviewPanelProps) {
-  return (
-    <div className="rjsf-preview h-full overflow-y-auto rounded-md border bg-card p-4">
+  const preview = (
+    <div className="rjsf-preview h-full overflow-y-auto p-4">
       <PreviewErrorBoundary key={JSON.stringify(schema)}>
         <Form
           schema={schema}
@@ -82,5 +95,23 @@ export function FormPreviewPanel({
         />
       </PreviewErrorBoundary>
     </div>
+  )
+
+  if (isOpen === undefined || !onOpenChange) {
+    return <div className="h-full overflow-y-auto rounded-md border bg-card">{preview}</div>
+  }
+
+  return (
+    <CollapsiblePanel
+      title="Form Preview"
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+      panelId={panelId}
+      onPanelDragStart={onPanelDragStart}
+      onPanelDrop={onPanelDrop}
+      order={order}
+    >
+      {preview}
+    </CollapsiblePanel>
   )
 }

@@ -8,6 +8,9 @@ inspector panel — with a live RJSF preview alongside.
 
 This repository publishes a single npm package (`@mestuka/rjsf-visual-builder`) and also contains a local
 demo app (`src/demo`) used to develop and manually test the component. Only `src/lib` is published.
+The library injects its styles automatically when imported; an explicit
+`@mestuka/rjsf-visual-builder/style.css` import is also available for applications that prefer
+managing stylesheets themselves.
 
 The builder opens in **Visual** mode by default and includes a **Code** tab with an editable
 `{ schema, uiSchema, formData }` JSON document beside a live RJSF form preview. Code changes are

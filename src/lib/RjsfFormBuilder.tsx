@@ -20,6 +20,7 @@ import { Button } from './ui/button'
 import { Textarea } from './ui/textarea'
 import { FormPreviewPanel } from './components/FormPreviewPanel'
 import { BuilderContext, type BuilderSelection } from './components/visual/builder-context'
+import { CollapsiblePanel } from './components/visual/CollapsiblePanel'
 import { Inspector } from './components/visual/Inspector'
 import { NodeList } from './components/visual/NodeList'
 import { Palette } from './components/visual/Palette'
@@ -76,6 +77,7 @@ interface ActiveDrag {
 }
 
 type BuilderView = 'visual' | 'code'
+type VisualPanelId = 'palette' | 'canvas' | 'preview' | 'inspector'
 
 /** `CSSProperties` widened to also accept CSS custom properties (e.g. `--rvb-primary`) without a cast. */
 type StyleWithCustomProperties = CSSProperties & { [key: `--${string}`]: string | number | undefined }
@@ -112,6 +114,11 @@ export function RjsfFormBuilder({
   const [activeDrag, setActiveDrag] = useState<ActiveDrag | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
+  const [isPaletteOpen, setIsPaletteOpen] = useState(true)
+  const [isCanvasOpen, setIsCanvasOpen] = useState(true)
+  const [isPreviewOpen, setIsPreviewOpen] = useState(true)
+  const [isInspectorOpen, setIsInspectorOpen] = useState(true)
+  const [panelOrder, setPanelOrder] = useState<VisualPanelId[]>(['palette', 'canvas', 'preview', 'inspector'])
   const [view, setView] = useState<BuilderView>('visual')
   const [codeText, setCodeText] = useState('')
   const [codeError, setCodeError] = useState<string | null>(null)
@@ -125,6 +132,25 @@ export function RjsfFormBuilder({
   )
   const widgetNames = useMemo(() => (widgets ? Object.keys(widgets) : []), [widgets])
   const fieldNames = useMemo(() => (fields ? Object.keys(fields) : []), [fields])
+  const hasCollapsedVisualPanel = !isPaletteOpen || !isCanvasOpen || !isPreviewOpen || !isInspectorOpen
+  const allVisualPanelsCollapsed = !isPaletteOpen && !isCanvasOpen && !isPreviewOpen && !isInspectorOpen
+  const [draggingPanel, setDraggingPanel] = useState<VisualPanelId | null>(null)
+  const handlePanelDrop = (target: string) => {
+    if (!draggingPanel || !target || draggingPanel === target) {
+      setDraggingPanel(null)
+      return
+    }
+    setPanelOrder((current) => {
+      const next = current.filter((panel) => panel !== draggingPanel)
+      const targetIndex = next.indexOf(target as VisualPanelId)
+      next.splice(targetIndex, 0, draggingPanel)
+      return next
+    })
+    setDraggingPanel(null)
+  }
+  const panelPosition = (panel: VisualPanelId) => panelOrder.indexOf(panel)
+  const panelIsOpen = (panel: VisualPanelId) =>
+    panel === 'palette' ? isPaletteOpen : panel === 'canvas' ? isCanvasOpen : panel === 'preview' ? isPreviewOpen : isInspectorOpen
 
   function dispatch(action: BuilderAction) {
     rawDispatch(action)
@@ -143,7 +169,12 @@ export function RjsfFormBuilder({
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
 
   function handleDragStart(event: DragStartEvent) {
-    const data = event.active.data.current as { type: string; paletteKind?: PaletteKind } | undefined
+    const data = event.active.data.current as { type: string; paletteKind?: PaletteKind; panelId?: VisualPanelId } | undefined
+    if (data?.type === 'panel') {
+      setDraggingPanel(data.panelId as VisualPanelId)
+      setActiveDrag({ label: `${data.panelId} panel` })
+      return
+    }
     if (data?.type === 'palette') {
       const def = paletteDefinitions.find((d) => d.kind === data.paletteKind)
       setActiveDrag(def ? { label: def.label } : null)
@@ -160,15 +191,23 @@ export function RjsfFormBuilder({
     const activeData = active.data.current as
       | { type: 'palette'; paletteKind: PaletteKind }
       | { type: 'node'; containerId: ContainerId; nodeId: string }
+      | { type: 'panel'; panelId: VisualPanelId }
       | undefined
     const overData = over.data.current as
       | { type: 'container'; containerId: ContainerId }
       | { type: 'node'; containerId: ContainerId; nodeId: string }
+      | { type: 'panel-drop'; panelId: VisualPanelId }
       | undefined
 
     if (!activeData || !overData) return
 
+    if (activeData.type === 'panel' && overData.type === 'panel-drop') {
+      handlePanelDrop(overData.panelId)
+      return
+    }
+
     if (activeData.type === 'palette') {
+      if (overData.type !== 'container' && overData.type !== 'node') return
       const def = paletteDefinitions.find((d) => d.kind === activeData.paletteKind)
       if (!def) return
       const containerId = overData.containerId
@@ -180,7 +219,11 @@ export function RjsfFormBuilder({
       return
     }
 
-    if (activeData.type === 'node' && overData.containerId === activeData.containerId) {
+    if (
+      activeData.type === 'node' &&
+      (overData.type === 'container' || overData.type === 'node') &&
+      overData.containerId === activeData.containerId
+    ) {
       const siblings = getContainerNodes(tree, activeData.containerId)
       if (!siblings) return
       const oldIndex = siblings.findIndex((n) => n.id === activeData.nodeId)
@@ -331,23 +374,114 @@ export function RjsfFormBuilder({
             onDragEnd={handleDragEnd}
             onDragCancel={() => setActiveDrag(null)}
           >
-            <div className="grid h-full min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[200px_1fr_1fr_260px]">
-              <Palette />
-              <div className="min-h-0 overflow-y-auto rounded-md border bg-muted/30 p-3">
-                <NodeList containerId="root" nodes={tree.children} emptyLabel="Drag fields here from the palette" />
+            <div
+              className={cn(
+                'grid h-full min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[var(--rvb-visual-columns)]',
+              )}
+              style={
+                {
+                  '--rvb-visual-columns': [
+                    hasCollapsedVisualPanel ? '160px' : '0px',
+                    ...panelOrder
+                      .filter(panelIsOpen)
+                      .map((panel) => (panel === 'palette' ? '220px' : panel === 'inspector' ? '260px' : 'minmax(0, 1fr)')),
+                    allVisualPanelsCollapsed ? 'minmax(0, 1fr)' : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' '),
+                } as CSSProperties
+              }
+            >
+              <div className={cn('flex flex-col items-stretch gap-2', !hasCollapsedVisualPanel && 'hidden lg:flex')}>
+                {panelOrder
+                  .filter((panel) => !panelIsOpen(panel))
+                  .map((panel) => {
+                    if (panel === 'palette') {
+                      return <Palette key={panel} isOpen={false} onOpenChange={setIsPaletteOpen} />
+                    }
+                    if (panel === 'canvas') {
+                      return (
+                        <CollapsiblePanel key={panel} title="Form Canvas" isOpen={false} onOpenChange={setIsCanvasOpen}>
+                          <></>
+                        </CollapsiblePanel>
+                      )
+                    }
+                    if (panel === 'preview') {
+                      return (
+                        <CollapsiblePanel key={panel} title="Form Preview" isOpen={false} onOpenChange={setIsPreviewOpen}>
+                          <></>
+                        </CollapsiblePanel>
+                      )
+                    }
+                    return (
+                      <CollapsiblePanel key={panel} title="Inspector" isOpen={false} onOpenChange={setIsInspectorOpen}>
+                        <></>
+                      </CollapsiblePanel>
+                    )
+                  })}
               </div>
-              <FormPreviewPanel
-                schema={currentSchema}
-                uiSchema={currentUiSchema}
-                formData={previewFormData}
-                onFormDataChange={handlePreviewFormDataChange}
-                onSubmit={onPreviewSubmit}
-                onValidationError={onPreviewValidationError}
-                widgets={widgets}
-                fields={fields}
-                templates={templates}
-              />
-              <Inspector tree={tree} availableWidgets={widgetNames} availableFields={fieldNames} />
+              {allVisualPanelsCollapsed ? (
+                <div className="flex items-center justify-center rounded-md border border-dashed bg-muted/20 text-sm text-muted-foreground">
+                  Open a panel to get started
+                </div>
+              ) : null}
+              {isPaletteOpen ? (
+                <Palette
+                  isOpen
+                  onOpenChange={setIsPaletteOpen}
+                  order={panelPosition('palette') + 1}
+                  panelId="palette"
+                  onPanelDragStart={(panel) => setDraggingPanel((panel || null) as VisualPanelId | null)}
+                  onPanelDrop={handlePanelDrop}
+                />
+              ) : null}
+              {isCanvasOpen ? (
+                <CollapsiblePanel
+                  title="Form Canvas"
+                  isOpen
+                  onOpenChange={setIsCanvasOpen}
+                  order={panelPosition('canvas') + 1}
+                  panelId="canvas"
+                  onPanelDragStart={(panel) => setDraggingPanel((panel || null) as VisualPanelId | null)}
+                  onPanelDrop={handlePanelDrop}
+                >
+                  <div className="h-full min-h-0 overflow-y-auto rounded-md bg-muted/30 p-3">
+                    <NodeList containerId="root" nodes={tree.children} emptyLabel="Drag fields here from the palette" />
+                  </div>
+                </CollapsiblePanel>
+              ) : null}
+              {isPreviewOpen ? (
+                <FormPreviewPanel
+                  schema={currentSchema}
+                  uiSchema={currentUiSchema}
+                  formData={previewFormData}
+                  onFormDataChange={handlePreviewFormDataChange}
+                  onSubmit={onPreviewSubmit}
+                  onValidationError={onPreviewValidationError}
+                  widgets={widgets}
+                  fields={fields}
+                  templates={templates}
+                  isOpen
+                  onOpenChange={setIsPreviewOpen}
+                  order={panelPosition('preview') + 1}
+                  panelId="preview"
+                  onPanelDragStart={(panel) => setDraggingPanel((panel || null) as VisualPanelId | null)}
+                  onPanelDrop={handlePanelDrop}
+                />
+              ) : null}
+              {isInspectorOpen ? (
+                <Inspector
+                  tree={tree}
+                  availableWidgets={widgetNames}
+                  availableFields={fieldNames}
+                  isOpen
+                  onOpenChange={setIsInspectorOpen}
+                  order={panelPosition('inspector') + 1}
+                  panelId="inspector"
+                  onPanelDragStart={(panel) => setDraggingPanel((panel || null) as VisualPanelId | null)}
+                  onPanelDrop={handlePanelDrop}
+                />
+              ) : null}
             </div>
             <DragOverlay>
               {activeDrag ? (

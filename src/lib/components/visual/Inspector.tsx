@@ -16,6 +16,7 @@ import { Trash2 } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useBuilderContext } from './builder-context'
 import { EnumEditor } from './EnumEditor'
+import { CollapsiblePanel } from './CollapsiblePanel'
 
 interface InspectorProps {
   tree: BuilderTree
@@ -23,20 +24,54 @@ interface InspectorProps {
   availableWidgets?: string[]
   /** Names of custom RJSF field components passed to `RjsfFormBuilder`, offered in the Field component picker. */
   availableFields?: string[]
+  isOpen?: boolean
+  onOpenChange?: (open: boolean) => void
+  panelId?: string
+  onPanelDragStart?: (panelId: string) => void
+  onPanelDrop?: (panelId: string) => void
+  order?: number
 }
 
 /**
  * The right-hand panel: shows editable properties for whatever is currently
  * selected in the canvas (a field, or a oneOf/anyOf branch).
  */
-export function Inspector({ tree, availableWidgets = [], availableFields = [] }: InspectorProps) {
+export function Inspector({
+  tree,
+  availableWidgets = [],
+  availableFields = [],
+  isOpen = true,
+  onOpenChange,
+  panelId,
+  onPanelDragStart,
+  onPanelDrop,
+  order,
+}: InspectorProps) {
   const { selection, dispatch, select } = useBuilderContext()
 
   if (!selection) {
-    return (
-      <div className="flex h-full items-center justify-center rounded-md border border-dashed p-4 text-center text-xs text-muted-foreground">
+    const emptyState = (
+      <div className="flex h-full items-center justify-center p-4 text-center text-xs text-muted-foreground">
         Select a field on the canvas to edit its properties.
       </div>
+    )
+    if (onOpenChange) {
+      return (
+        <CollapsiblePanel
+          title="Inspector"
+          isOpen={isOpen}
+          onOpenChange={onOpenChange}
+          panelId={panelId}
+          onPanelDragStart={onPanelDragStart}
+          onPanelDrop={onPanelDrop}
+          order={order}
+        >
+          {emptyState}
+        </CollapsiblePanel>
+      )
+    }
+    return (
+      <div className="h-full rounded-md border border-dashed">{emptyState}</div>
     )
   }
 
@@ -46,8 +81,8 @@ export function Inspector({ tree, availableWidgets = [], availableFields = [] }:
     const branch = node.branches.find((b) => b.id === selection.branchId)
     if (!branch) return null
 
-    return (
-      <div className="flex h-full flex-col gap-4 overflow-y-auto rounded-md border bg-card p-3">
+    const content = (
+      <div className="flex h-full flex-col gap-4 overflow-y-auto p-3">
         <p className="text-xs font-medium text-muted-foreground">Conditional option</p>
         <Field label="Option title">
           <Input
@@ -62,6 +97,22 @@ export function Inspector({ tree, availableWidgets = [], availableFields = [] }:
         </p>
       </div>
     )
+
+    return onOpenChange ? (
+      <CollapsiblePanel
+        title="Inspector"
+        isOpen={isOpen}
+        onOpenChange={onOpenChange}
+        panelId={panelId}
+        onPanelDragStart={onPanelDragStart}
+        onPanelDrop={onPanelDrop}
+        order={order}
+      >
+        {content}
+      </CollapsiblePanel>
+    ) : (
+      <div className="h-full rounded-md border bg-card">{content}</div>
+    )
   }
 
   const node = findNodeById(tree.children, selection.id)
@@ -71,8 +122,8 @@ export function Inspector({ tree, availableWidgets = [], availableFields = [] }:
     dispatch({ type: 'UPDATE_NODE', nodeId: node!.id, patch: values })
   }
 
-  return (
-    <div className="flex h-full flex-col gap-4 overflow-y-auto rounded-md border bg-card p-3">
+  const branchContent = (
+    <div className="flex h-full flex-col gap-4 overflow-y-auto p-3">
       <div className="flex items-center justify-between">
         <p className="text-xs font-medium text-muted-foreground">Field properties</p>
         <Button
@@ -332,6 +383,21 @@ export function Inspector({ tree, availableWidgets = [], availableFields = [] }:
         </div>
       )}
     </div>
+  )
+  return onOpenChange ? (
+    <CollapsiblePanel
+      title="Inspector"
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+      panelId={panelId}
+      onPanelDragStart={onPanelDragStart}
+      onPanelDrop={onPanelDrop}
+      order={order}
+    >
+      {branchContent}
+    </CollapsiblePanel>
+  ) : (
+    <div className="h-full rounded-md border bg-card">{branchContent}</div>
   )
 }
 

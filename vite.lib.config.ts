@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import dts from 'vite-plugin-dts'
+import cssInjectedByJs from 'vite-plugin-css-injected-by-js'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -17,6 +18,21 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    {
+      name: 'preserve-library-css',
+      enforce: 'post',
+      generateBundle(_options, bundle) {
+        const cssAsset = Object.values(bundle).find(
+          (output) => output.type === 'asset' && output.fileName === 'injected.css',
+        )
+        if (cssAsset?.type === 'asset') {
+          this.emitFile({ type: 'asset', fileName: 'style.css', source: cssAsset.source })
+        }
+      },
+    },
+    cssInjectedByJs({
+      cssAssetsFilterFunction: (asset) => asset.fileName === 'injected.css',
+    }),
     dts({
       tsconfigPath: './tsconfig.lib.json',
       entryRoot: 'src/lib',
@@ -38,7 +54,7 @@ export default defineConfig({
       name: 'RjsfVisualBuilder',
       fileName: (format) => (format === 'es' ? 'index.js' : `index.${format}.js`),
       formats: ['es', 'cjs'],
-      cssFileName: 'style',
+      cssFileName: 'injected',
     },
     rollupOptions: {
       external: [

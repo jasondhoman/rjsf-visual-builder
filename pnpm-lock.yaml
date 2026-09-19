@@ -78,6 +78,9 @@ importers:
       vite:
         specifier: ^8.3.0
         version: 8.3.0(@types/node@24.13.5)(jiti@2.7.0)
+      vite-plugin-css-injected-by-js:
+        specifier: ^5.0.2
+        version: 5.0.2(vite@8.3.0(@types/node@24.13.5)(jiti@2.7.0))
       vite-plugin-dts:
         specifier: ^5.1.0
         version: 5.1.0(rolldown@1.2.9)(typescript@6.0.3)(vite@8.3.0(@types/node@24.13.5)(jiti@2.7.0))
@@ -1735,6 +1738,11 @@ packages:
       '@types/react':
         optional: true
 
+  vite-plugin-css-injected-by-js@5.0.2:
+    resolution: {integrity: sha512-Hvg48QfYsCL53ju9T5zTC0Ofg90XLa8t5zhhKmPYbayoMQieNcQDkkRX8pv4TAcKPZwVisLFiwDy5uBjOn+3Ow==}
+    peerDependencies:
+      vite: '>8.0.0-0'
+
   vite-plugin-dts@5.1.0:
     resolution: {integrity: sha512-MfLc2G+mXPUDGGxpHQeYbdunavFP9UpT9yxiAsTgUXRxfEd3HqysSAM4E72jhz5eIz3OOexCHkqiVlQq8ok9/A==}
     peerDependencies:
@@ -3299,6 +3307,10 @@ snapshots:
       tslib: 2.8.1
     optionalDependencies:
       '@types/react': 19.3.0
+
+  vite-plugin-css-injected-by-js@5.0.2(vite@8.3.0(@types/node@24.13.5)(jiti@2.7.0)):
+    dependencies:
+      vite: 8.3.0(@types/node@24.13.5)(jiti@2.7.0)
 
   vite-plugin-dts@5.1.0(rolldown@1.2.9)(typescript@6.0.3)(vite@8.3.0(@types/node@24.13.5)(jiti@2.7.0)):
     dependencies:
