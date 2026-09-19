@@ -72,6 +72,7 @@ function App() {
             toast.success('Form submitted — see console for the data.')
           }}
           onPreviewValidationError={() => toast.error('Form has validation errors.')}
+          showDownloadButton
         />
       </main>
       <Toaster richColors position="bottom-right" />
