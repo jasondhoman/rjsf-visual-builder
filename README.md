@@ -175,12 +175,25 @@ pnpm dev          # run the local demo app (imports the library from source)
 pnpm build        # build the publishable library into dist/ (alias for build:lib)
 pnpm build:lib    # same as above, explicit
 pnpm build:demo   # type-check + build the demo app (not published)
+pnpm test         # TypeScript test/type-check
 pnpm lint         # oxlint
 ```
 
 `pnpm dev` and `pnpm build:demo` use `vite.config.ts` and `index.html`/`src/demo`. `pnpm build:lib`
 uses `vite.lib.config.ts` to bundle `src/lib` into `dist/index.js` (ESM), `dist/index.cjs.js`
 (CJs), `dist/index.d.ts`, and `dist/style.css` for publishing.
+
+## GitHub Pages
+
+The workflow at [`.github/workflows/pages.yml`](./.github/workflows/pages.yml) runs on pull
+requests and pushes to `main`. It installs dependencies with the frozen lockfile, runs the
+TypeScript test/type-check and linter, builds both the npm library and demo, and deploys the demo
+build to GitHub Pages after pushes or manual workflow runs. Pull requests run the checks and build
+but do not deploy.
+
+To enable the deployment for a repository, open **Settings → Pages** and set **Source** to
+**GitHub Actions**. The Vite demo uses relative asset URLs so it works at the repository's
+project-site URL (for example, `https://<owner>.github.io/<repository>/`).
 
 ## Demo app features
 

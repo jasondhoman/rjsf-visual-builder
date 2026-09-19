@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "A drag-and-drop visual builder component for react-jsonschema-form (RJSF).",
   "type": "module",
+  "packageManager": "pnpm@11.22.0",
   "license": "MIT",
   "files": [
     "dist"
@@ -27,6 +28,7 @@
     "build:lib": "vite build --config vite.lib.config.ts",
     "build:demo": "tsc -b && vite build",
     "prepublishOnly": "pnpm run build:lib",
+    "test": "tsc -b --pretty false",
     "lint": "oxlint",
     "preview": "vite preview"
   },
