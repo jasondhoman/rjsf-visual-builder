@@ -5,6 +5,10 @@
   "type": "module",
   "packageManager": "pnpm@11.22.0",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jasondhoman/rjsf-visual-builder"
+  },
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
