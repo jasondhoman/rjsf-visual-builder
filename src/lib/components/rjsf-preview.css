@@ -1,0 +1,88 @@
+/**
+ * The @rjsf/core "default" theme ships with no CSS at all — it just renders
+ * plain HTML form controls. These rules add just enough spacing and
+ * legibility to make the live preview usable without pulling in a full
+ * theme package (@rjsf/mui, @rjsf/antd, etc.).
+ *
+ * Wrapped in `:where(...)` so every selector has zero specificity — override
+ * any of these from your own stylesheet with an equally simple selector
+ * (e.g. `.rjsf-preview input { ... }`), no `!important` needed.
+ */
+
+:where(.rjsf-preview .form-group) {
+  margin-bottom: 1rem;
+}
+
+:where(.rjsf-preview label) {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+:where(
+    .rjsf-preview input[type='text'],
+    .rjsf-preview input[type='number'],
+    .rjsf-preview input[type='password'],
+    .rjsf-preview input[type='email'],
+    .rjsf-preview select,
+    .rjsf-preview textarea
+  ) {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.875rem;
+  border: 1px solid var(--rvb-border);
+  border-radius: 0.375rem;
+  background: var(--rvb-background);
+  color: var(--rvb-foreground);
+}
+
+:where(.rjsf-preview input[type='checkbox']) {
+  margin-right: 0.4rem;
+}
+
+:where(.rjsf-preview fieldset) {
+  border: 1px solid var(--rvb-border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin: 0 0 1rem;
+}
+
+:where(.rjsf-preview legend) {
+  font-weight: 600;
+  padding: 0 0.4rem;
+}
+
+:where(.rjsf-preview .field-description) {
+  font-size: 0.8rem;
+  color: var(--rvb-muted-foreground);
+  margin-bottom: 0.35rem;
+}
+
+:where(
+    .rjsf-preview .btn-info,
+    .rjsf-preview .btn-danger,
+    .rjsf-preview .btn-add,
+    .rjsf-preview button[type='submit']
+  ) {
+  cursor: pointer;
+  border: 1px solid var(--rvb-border);
+  border-radius: 0.375rem;
+  background: var(--rvb-primary);
+  color: var(--rvb-primary-foreground);
+  padding: 0.4rem 0.9rem;
+  font-size: 0.875rem;
+}
+
+:where(.rjsf-preview .array-item) {
+  border: 1px dashed var(--rvb-border);
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+:where(.rjsf-preview .text-danger) {
+  color: var(--rvb-destructive);
+  font-size: 0.8rem;
+}

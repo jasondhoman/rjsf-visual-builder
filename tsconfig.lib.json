@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.lib.tsbuildinfo",
+    "noEmit": false,
+    "declaration": true
+  },
+  "include": ["src/lib"]
+}

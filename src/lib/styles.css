@@ -1,0 +1,91 @@
+/**
+ * Styles for the <RjsfFormBuilder /> component. Import this once in your
+ * app, e.g. `import 'rjsf-visual-builder/style.css'`.
+ *
+ * Only Tailwind's theme + utility layers are pulled in (no `preflight`/base
+ * reset), so this won't override your host app's global element styles.
+ *
+ * Theming: every color/radius the component uses is a CSS custom property
+ * scoped under `.rvb-root` (the component's own wrapper), defined inside
+ * `:where(...)` so they have zero specificity — override any of them from
+ * your own stylesheet (loaded in any order) with a plain `.rvb-root { ... }`
+ * rule, or per-instance via the `style` prop, e.g.
+ * `<RjsfFormBuilder style={{ '--rvb-primary': '#2563eb' }} />`. See the
+ * README's Theming section for the full variable list and a dark-mode
+ * example (toggle by adding a `.dark` class as an ancestor, matching the
+ * common shadcn/ui convention).
+ */
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+:where(.rvb-root) {
+  --rvb-radius: 0.5rem;
+  --rvb-background: oklch(1 0 0);
+  --rvb-foreground: oklch(0.145 0 0);
+  --rvb-card: oklch(1 0 0);
+  --rvb-card-foreground: oklch(0.145 0 0);
+  --rvb-popover: oklch(1 0 0);
+  --rvb-popover-foreground: oklch(0.145 0 0);
+  --rvb-primary: oklch(0.205 0 0);
+  --rvb-primary-foreground: oklch(0.985 0 0);
+  --rvb-secondary: oklch(0.97 0 0);
+  --rvb-secondary-foreground: oklch(0.205 0 0);
+  --rvb-muted: oklch(0.97 0 0);
+  --rvb-muted-foreground: oklch(0.556 0 0);
+  --rvb-accent: oklch(0.97 0 0);
+  --rvb-accent-foreground: oklch(0.205 0 0);
+  --rvb-destructive: oklch(0.577 0.245 27.325);
+  --rvb-border: oklch(0.922 0 0);
+  --rvb-input: oklch(0.922 0 0);
+  --rvb-ring: oklch(0.708 0 0);
+}
+
+:where(.dark .rvb-root, .rvb-root.dark) {
+  --rvb-background: oklch(0.145 0 0);
+  --rvb-foreground: oklch(0.985 0 0);
+  --rvb-card: oklch(0.205 0 0);
+  --rvb-card-foreground: oklch(0.985 0 0);
+  --rvb-popover: oklch(0.205 0 0);
+  --rvb-popover-foreground: oklch(0.985 0 0);
+  --rvb-primary: oklch(0.922 0 0);
+  --rvb-primary-foreground: oklch(0.205 0 0);
+  --rvb-secondary: oklch(0.269 0 0);
+  --rvb-secondary-foreground: oklch(0.985 0 0);
+  --rvb-muted: oklch(0.269 0 0);
+  --rvb-muted-foreground: oklch(0.708 0 0);
+  --rvb-accent: oklch(0.269 0 0);
+  --rvb-accent-foreground: oklch(0.985 0 0);
+  --rvb-destructive: oklch(0.704 0.191 22.216);
+  --rvb-border: oklch(1 0 0 / 10%);
+  --rvb-input: oklch(1 0 0 / 15%);
+  --rvb-ring: oklch(0.556 0 0);
+}
+
+.rvb-root {
+  color: var(--rvb-foreground);
+}
+
+@theme inline {
+  --radius-sm: calc(var(--rvb-radius) - 4px);
+  --radius-md: calc(var(--rvb-radius) - 2px);
+  --radius-lg: var(--rvb-radius);
+  --radius-xl: calc(var(--rvb-radius) + 4px);
+  --color-background: var(--rvb-background);
+  --color-foreground: var(--rvb-foreground);
+  --color-card: var(--rvb-card);
+  --color-card-foreground: var(--rvb-card-foreground);
+  --color-popover: var(--rvb-popover);
+  --color-popover-foreground: var(--rvb-popover-foreground);
+  --color-primary: var(--rvb-primary);
+  --color-primary-foreground: var(--rvb-primary-foreground);
+  --color-secondary: var(--rvb-secondary);
+  --color-secondary-foreground: var(--rvb-secondary-foreground);
+  --color-muted: var(--rvb-muted);
+  --color-muted-foreground: var(--rvb-muted-foreground);
+  --color-accent: var(--rvb-accent);
+  --color-accent-foreground: var(--rvb-accent-foreground);
+  --color-destructive: var(--rvb-destructive);
+  --color-border: var(--rvb-border);
+  --color-input: var(--rvb-input);
+  --color-ring: var(--rvb-ring);
+}
