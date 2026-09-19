@@ -1,6 +1,6 @@
 {
   "name": "@mestuka/rjsf-visual-builder",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "A drag-and-drop visual builder component for react-jsonschema-form (RJSF).",
   "type": "module",
   "packageManager": "pnpm@11.22.0",
