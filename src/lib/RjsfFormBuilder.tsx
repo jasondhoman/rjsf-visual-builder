@@ -10,13 +10,14 @@ import {
 import type { RegistryFieldsType, RegistryWidgetsType, RJSFSchema, TemplatesType, UiSchema } from '@rjsf/utils'
 import { useMemo, useReducer, useState, type CSSProperties } from 'react'
 import { cn } from 'cn'
-import { Loader2, Save } from 'lucide-react'
+import { AlertCircle, Code2, Eye, Loader2, Save } from 'lucide-react'
 import { schemaToTree, treeToSchema, treeToUiSchema } from './visual/convert'
 import { paletteDefinitions, type PaletteKind } from './visual/paletteItems'
 import { builderTreeReducer, getContainerNodes } from './visual/reducer'
 import type { ContainerId } from './visual/types'
 import type { BuilderDocument } from './types'
 import { Button } from './ui/button'
+import { Textarea } from './ui/textarea'
 import { FormPreviewPanel } from './components/FormPreviewPanel'
 import { BuilderContext, type BuilderSelection } from './components/visual/builder-context'
 import { Inspector } from './components/visual/Inspector'
@@ -72,6 +73,8 @@ interface ActiveDrag {
   label: string
 }
 
+type BuilderView = 'visual' | 'code'
+
 /** `CSSProperties` widened to also accept CSS custom properties (e.g. `--rvb-primary`) without a cast. */
 type StyleWithCustomProperties = CSSProperties & { [key: `--${string}`]: string | number | undefined }
 
@@ -106,6 +109,9 @@ export function RjsfFormBuilder({
   const [selection, setSelection] = useState<BuilderSelection>(undefined)
   const [activeDrag, setActiveDrag] = useState<ActiveDrag | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [view, setView] = useState<BuilderView>('visual')
+  const [codeText, setCodeText] = useState('')
+  const [codeError, setCodeError] = useState<string | null>(null)
 
   const currentSchema = useMemo(() => treeToSchema(tree), [tree])
   const currentUiSchema = useMemo(() => treeToUiSchema(tree), [tree])
@@ -173,25 +179,90 @@ export function RjsfFormBuilder({
     }
   }
 
+  function openCodeView() {
+    setCodeText(JSON.stringify({ schema: currentSchema, uiSchema: currentUiSchema, formData: previewFormData }, null, 2))
+    setCodeError(null)
+    setView('code')
+  }
+
+  function applyCodeChanges() {
+    try {
+      const parsed: unknown = JSON.parse(codeText)
+      if (!parsed || typeof parsed !== 'object' || !('schema' in parsed)) {
+        throw new Error('Code must be a document object with a schema property.')
+      }
+
+      const document = parsed as Partial<BuilderDocument>
+      if (!document.schema || typeof document.schema !== 'object') {
+        throw new Error('The schema property must be a JSON Schema object.')
+      }
+
+      dispatch({ type: 'LOAD_TREE', tree: schemaToTree(document.schema, document.uiSchema ?? {}) })
+      setPreviewFormData(document.formData ?? {})
+      setCodeError(null)
+    } catch (error) {
+      setCodeError(error instanceof Error ? error.message : 'Could not parse the form document.')
+    }
+  }
+
   return (
     <BuilderContext.Provider value={{ dispatch, selection, select: setSelection }}>
       <div className={cn('rvb-root flex h-full min-h-0 flex-col gap-3', className)} style={style}>
-        <div className="flex items-center justify-end">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="inline-flex rounded-md border bg-background p-1" aria-label="Builder view">
+            <Button
+              type="button"
+              variant={view === 'visual' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setView('visual')}
+              aria-pressed={view === 'visual'}
+            >
+              <Eye />
+              Visual
+            </Button>
+            <Button
+              type="button"
+              variant={view === 'code' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={openCodeView}
+              aria-pressed={view === 'code'}
+            >
+              <Code2 />
+              Code
+            </Button>
+          </div>
           <Button onClick={handleSave} disabled={isSaving}>
             {isSaving ? <Loader2 className="animate-spin" /> : <Save />}
             {saveLabel}
           </Button>
         </div>
-        <DndContext
-          sensors={sensors}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-          onDragCancel={() => setActiveDrag(null)}
-        >
-          <div className="grid h-full min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[200px_1fr_1fr_260px]">
-            <Palette />
-            <div className="min-h-0 overflow-y-auto rounded-md border bg-muted/30 p-3">
-              <NodeList containerId="root" nodes={tree.children} emptyLabel="Drag fields here from the palette" />
+        {view === 'code' ? (
+          <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className="flex min-h-0 flex-col gap-3 rounded-md border bg-card p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-sm font-medium">Form document</p>
+                  <p className="text-xs text-muted-foreground">
+                    Edit JSON, then apply changes to update the rendered form.
+                  </p>
+                </div>
+                <Button type="button" onClick={applyCodeChanges}>
+                  Apply changes
+                </Button>
+              </div>
+              <Textarea
+                value={codeText}
+                onChange={(event) => setCodeText(event.target.value)}
+                className="min-h-0 flex-1 resize-none font-mono text-xs"
+                aria-label="Form document JSON"
+                spellCheck={false}
+              />
+              {codeError ? (
+                <p className="flex items-center gap-1 text-sm text-destructive" role="alert">
+                  <AlertCircle className="size-4" />
+                  {codeError}
+                </p>
+              ) : null}
             </div>
             <FormPreviewPanel
               schema={currentSchema}
@@ -204,14 +275,39 @@ export function RjsfFormBuilder({
               fields={fields}
               templates={templates}
             />
-            <Inspector tree={tree} availableWidgets={widgetNames} availableFields={fieldNames} />
           </div>
-          <DragOverlay>
-            {activeDrag ? (
-              <div className="rounded-md border bg-background px-3 py-1.5 text-sm shadow-lg">{activeDrag.label}</div>
-            ) : null}
-          </DragOverlay>
-        </DndContext>
+        ) : (
+          <DndContext
+            sensors={sensors}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onDragCancel={() => setActiveDrag(null)}
+          >
+            <div className="grid h-full min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[200px_1fr_1fr_260px]">
+              <Palette />
+              <div className="min-h-0 overflow-y-auto rounded-md border bg-muted/30 p-3">
+                <NodeList containerId="root" nodes={tree.children} emptyLabel="Drag fields here from the palette" />
+              </div>
+              <FormPreviewPanel
+                schema={currentSchema}
+                uiSchema={currentUiSchema}
+                formData={previewFormData}
+                onFormDataChange={setPreviewFormData}
+                onSubmit={onPreviewSubmit}
+                onValidationError={onPreviewValidationError}
+                widgets={widgets}
+                fields={fields}
+                templates={templates}
+              />
+              <Inspector tree={tree} availableWidgets={widgetNames} availableFields={fieldNames} />
+            </div>
+            <DragOverlay>
+              {activeDrag ? (
+                <div className="rounded-md border bg-background px-3 py-1.5 text-sm shadow-lg">{activeDrag.label}</div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+        )}
       </div>
     </BuilderContext.Provider>
   )
