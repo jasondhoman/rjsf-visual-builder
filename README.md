@@ -203,16 +203,28 @@ manually. It runs the test/type-check, linter, library build, and `npm pack --dr
 publishing. The package is published publicly from the `dist` directory described by the
 `files` field in [package.json](./package.json).
 
-Before using the workflow, add an `NPM_TOKEN` repository secret containing a token allowed to
-publish the package. Then update the version and push a tag:
+This workflow uses npm trusted publishing through GitHub Actions OIDC; no `NPM_TOKEN` secret is
+needed. On npmjs.com, open the package's **Settings → Trusted Publisher**, select **GitHub
+Actions**, and configure:
+
+- **Repository owner:** the GitHub user or organization that owns this repository
+- **Repository name:** the GitHub repository name
+- **Workflow filename:** `publish.yml`
+- **Environment:** leave empty unless the workflow is configured with a GitHub environment
+
+The GitHub Actions workflow must retain `id-token: write`, which allows npm to exchange the
+short-lived GitHub OIDC identity for publish authorization. Then update the version and push a tag:
 
 ```bash
 pnpm version patch
 git push origin main --follow-tags
 ```
 
-The workflow also requests npm provenance through `npm publish --provenance`. The scoped package is published as `@mestuka/rjsf-visual-builder`. The npm account or
-organization must own the `mestuka` scope, and subsequent tags must contain a new version.
+Trusted publishing automatically generates npm provenance. The scoped package is published as
+`@mestuka/rjsf-visual-builder`. The npm account or organization must own the `mestuka` scope,
+and subsequent tags must contain a new version. If npm requires the package to exist before a
+trusted publisher can be configured, bootstrap the first version once with an interactive,
+2FA-approved local publish, configure trusted publishing, and use OIDC for every later release.
 
 ## Demo app features
 
