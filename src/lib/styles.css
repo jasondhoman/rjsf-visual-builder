@@ -1,6 +1,6 @@
 /**
  * Styles for the <RjsfFormBuilder /> component. Import this once in your
- * app, e.g. `import 'rjsf-visual-builder/style.css'`.
+ * app, e.g. `import '@mestuka/rjsf-visual-builder/style.css'`.
  *
  * Only Tailwind's theme + utility layers are pulled in (no `preflight`/base
  * reset), so this won't override your host app's global element styles.

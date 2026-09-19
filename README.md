@@ -1,4 +1,4 @@
-# rjsf-visual-builder
+# @mestuka/rjsf-visual-builder
 
 A drag-and-drop **visual builder component** for
 [react-jsonschema-form (RJSF)](https://github.com/rjsf-team/react-jsonschema-form). Drop it into
@@ -6,13 +6,13 @@ any React app to let users construct a JSON Schema + `uiSchema` by dragging fiel
 nesting objects/arrays/`oneOf`/`anyOf` branches, and editing each field's properties in an
 inspector panel — with a live RJSF preview alongside.
 
-This repository publishes a single npm package (`rjsf-visual-builder`) and also contains a local
+This repository publishes a single npm package (`@mestuka/rjsf-visual-builder`) and also contains a local
 demo app (`src/demo`) used to develop and manually test the component. Only `src/lib` is published.
 
 ## Install
 
 ```bash
-pnpm add rjsf-visual-builder @rjsf/core @rjsf/utils @rjsf/validator-ajv8
+pnpm add @mestuka/rjsf-visual-builder @rjsf/core @rjsf/utils @rjsf/validator-ajv8
 ```
 
 `react`, `react-dom`, and the `@rjsf/*` packages are peer dependencies — install whichever
@@ -21,8 +21,8 @@ versions your app already uses.
 ## Usage
 
 ```tsx
-import { RjsfFormBuilder, type BuilderDocument } from 'rjsf-visual-builder'
-import 'rjsf-visual-builder/style.css'
+import { RjsfFormBuilder, type BuilderDocument } from '@mestuka/rjsf-visual-builder'
+import '@mestuka/rjsf-visual-builder/style.css'
 
 function EditFormPage() {
   async function handleSave(document: BuilderDocument) {
@@ -194,6 +194,25 @@ but do not deploy.
 To enable the deployment for a repository, open **Settings → Pages** and set **Source** to
 **GitHub Actions**. The Vite demo uses relative asset URLs so it works at the repository's
 project-site URL (for example, `https://<owner>.github.io/<repository>/`).
+
+## npm publishing
+
+The workflow at [`.github/workflows/publish.yml`](./.github/workflows/publish.yml) publishes the
+package when a semantic version tag matching `v*.*.*` is pushed, or when the workflow is started
+manually. It runs the test/type-check, linter, library build, and `npm pack --dry-run` before
+publishing. The package is published publicly from the `dist` directory described by the
+`files` field in [package.json](./package.json).
+
+Before using the workflow, add an `NPM_TOKEN` repository secret containing a token allowed to
+publish the package. Then update the version and push a tag:
+
+```bash
+pnpm version patch
+git push origin main --follow-tags
+```
+
+The workflow also requests npm provenance through `npm publish --provenance`. The scoped package is published as `@mestuka/rjsf-visual-builder`. The npm account or
+organization must own the `mestuka` scope, and subsequent tags must contain a new version.
 
 ## Demo app features
 

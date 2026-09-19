@@ -8,7 +8,7 @@ import dts from 'vite-plugin-dts'
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 
 /**
- * Builds the publishable `rjsf-visual-builder` package from `src/lib`.
+ * Builds the publishable `@mestuka/rjsf-visual-builder` package from `src/lib`.
  * Run with `pnpm run build:lib` (or `pnpm run build`, which is an alias for
  * it). The demo app in `src/demo` is built separately via
  * `pnpm run build:demo` and is never included in the published package.
