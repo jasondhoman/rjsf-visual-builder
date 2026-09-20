@@ -8,14 +8,13 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core'
 import type { RegistryFieldsType, RegistryWidgetsType, RJSFSchema, TemplatesType, UiSchema } from '@rjsf/utils'
-import { useEffect, useMemo, useReducer, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useReducer, useState, type CSSProperties } from 'react'
 import { cn } from 'cn'
-import { AlertCircle, Code2, Download, Eye, Loader2, Save } from 'lucide-react'
+import { AlertCircle, Code2, Eye } from 'lucide-react'
 import { schemaToTree, treeToSchema, treeToUiSchema } from './visual/convert'
 import { paletteDefinitions, type PaletteKind } from './visual/paletteItems'
 import { builderTreeReducer, getContainerNodes, type BuilderAction } from './visual/reducer'
 import type { ContainerId } from './visual/types'
-import type { BuilderDocument } from './types'
 import { Button } from './ui/button'
 import { Textarea } from './ui/textarea'
 import { FormPreviewPanel } from './components/FormPreviewPanel'
@@ -24,6 +23,7 @@ import { CollapsiblePanel } from './components/visual/CollapsiblePanel'
 import { Inspector } from './components/visual/Inspector'
 import { NodeList } from './components/visual/NodeList'
 import { Palette } from './components/visual/Palette'
+import type { BuilderDocument } from './types'
 
 export interface RjsfFormBuilderProps {
   /** Initial JSON Schema to load into the builder. */
@@ -33,17 +33,12 @@ export interface RjsfFormBuilderProps {
   /** Initial sample form data shown in the live preview. */
   formData?: unknown
   /**
-   * Called with the current document when the user clicks Save. May return
-   * a promise; the Save button is disabled while it's pending. This library
-   * never shows toasts/notifications itself — show your own based on the
-   * result (or thrown error) of this callback.
+   * Called whenever the edited document changes, including changes to the
+   * schema, uiSchema, or preview form data. The callback also runs once with
+   * the initial document after the builder mounts.
    */
-  onSave?: (document: BuilderDocument) => void | Promise<void>
-  /** Label for the save button. Defaults to `"Save"`. */
-  saveLabel?: string
-  /** When true, renders a button that downloads the current document as JSON. */
-  showDownloadButton?: boolean
-  /** Called when the live preview form is submitted (separate from Save). */
+  onChange?: (document: BuilderDocument) => void
+  /** Called when the live preview form is submitted. */
   onPreviewSubmit?: (formData: unknown) => void
   /** Called when the live preview form fails RJSF validation on submit. */
   onPreviewValidationError?: () => void
@@ -61,6 +56,11 @@ export interface RjsfFormBuilderProps {
   fields?: RegistryFieldsType
   /** Custom RJSF templates (e.g. `FieldTemplate`, `ArrayFieldTemplate`), passed straight through to the live preview's `<Form>`. */
   templates?: Partial<TemplatesType>
+  /**
+   * Additional CSS classes applied to the builder's root element. Use this to
+   * provide layout or host-application styling without replacing the builder's
+   * built-in classes.
+   */
   className?: string
   /**
    * Inline styles for the component's root element. Useful for overriding
@@ -96,9 +96,7 @@ export function RjsfFormBuilder({
   schema,
   uiSchema,
   formData,
-  onSave,
-  saveLabel = 'Save',
-  showDownloadButton = false,
+  onChange,
   onPreviewSubmit,
   onPreviewValidationError,
   widgets,
@@ -112,8 +110,6 @@ export function RjsfFormBuilder({
   const [previewFormData, setPreviewFormData] = useState<unknown>(formData ?? {})
   const [selection, setSelection] = useState<BuilderSelection>(undefined)
   const [activeDrag, setActiveDrag] = useState<ActiveDrag | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
-  const [hasChanges, setHasChanges] = useState(false)
   const [isPaletteOpen, setIsPaletteOpen] = useState(true)
   const [isCanvasOpen, setIsCanvasOpen] = useState(true)
   const [isPreviewOpen, setIsPreviewOpen] = useState(true)
@@ -122,8 +118,6 @@ export function RjsfFormBuilder({
   const [view, setView] = useState<BuilderView>('visual')
   const [codeText, setCodeText] = useState('')
   const [codeError, setCodeError] = useState<string | null>(null)
-  const isInitialized = useRef(false)
-
   const currentSchema = useMemo(() => treeToSchema(tree), [tree])
   const currentUiSchema = useMemo(() => treeToUiSchema(tree), [tree])
   const currentDocument = useMemo<BuilderDocument>(
@@ -135,6 +129,10 @@ export function RjsfFormBuilder({
   const hasCollapsedVisualPanel = !isPaletteOpen || !isCanvasOpen || !isPreviewOpen || !isInspectorOpen
   const allVisualPanelsCollapsed = !isPaletteOpen && !isCanvasOpen && !isPreviewOpen && !isInspectorOpen
   const [draggingPanel, setDraggingPanel] = useState<VisualPanelId | null>(null)
+
+  useEffect(() => {
+    onChange?.(currentDocument)
+  }, [currentDocument, onChange])
   const handlePanelDrop = (target: string) => {
     if (!draggingPanel || !target || draggingPanel === target) {
       setDraggingPanel(null)
@@ -154,17 +152,11 @@ export function RjsfFormBuilder({
 
   function dispatch(action: BuilderAction) {
     rawDispatch(action)
-    setHasChanges(true)
   }
 
   function handlePreviewFormDataChange(nextFormData: unknown) {
     setPreviewFormData(nextFormData)
-    if (isInitialized.current) setHasChanges(true)
   }
-
-  useEffect(() => {
-    isInitialized.current = true
-  }, [])
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
 
@@ -235,32 +227,10 @@ export function RjsfFormBuilder({
     }
   }
 
-  async function handleSave() {
-    if (!onSave || !hasChanges) return
-
-    setIsSaving(true)
-    try {
-      await onSave(currentDocument)
-      setHasChanges(false)
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
   function openCodeView() {
     setCodeText(JSON.stringify({ schema: currentSchema, uiSchema: currentUiSchema, formData: previewFormData }, null, 2))
     setCodeError(null)
     setView('code')
-  }
-
-  function handleDownload() {
-    const blob = new Blob([JSON.stringify(currentDocument, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = 'rjsf-form.json'
-    link.click()
-    URL.revokeObjectURL(url)
   }
 
   function applyCodeChanges() {
@@ -277,7 +247,6 @@ export function RjsfFormBuilder({
 
       dispatch({ type: 'LOAD_TREE', tree: schemaToTree(document.schema, document.uiSchema ?? {}) })
       setPreviewFormData(document.formData ?? {})
-      setHasChanges(true)
       setCodeError(null)
     } catch (error) {
       setCodeError(error instanceof Error ? error.message : 'Could not parse the form document.')
@@ -310,22 +279,6 @@ export function RjsfFormBuilder({
               Code
             </Button>
           </div>
-          {onSave || showDownloadButton ? (
-            <div className="flex items-center gap-2">
-              {onSave ? (
-                <Button onClick={handleSave} disabled={isSaving || !hasChanges}>
-                  {isSaving ? <Loader2 className="animate-spin" /> : <Save />}
-                  {saveLabel}
-                </Button>
-              ) : null}
-              {showDownloadButton ? (
-                <Button type="button" variant="outline" onClick={handleDownload}>
-                  <Download />
-                  Download
-                </Button>
-              ) : null}
-            </div>
-          ) : null}
         </div>
         {view === 'code' ? (
           <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-2">

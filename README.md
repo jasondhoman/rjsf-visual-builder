@@ -29,21 +29,15 @@ versions your app already uses.
 ## Usage
 
 ```tsx
-import { RjsfFormBuilder, type BuilderDocument } from '@mestuka/rjsf-visual-builder'
+import { RjsfFormBuilder } from '@mestuka/rjsf-visual-builder'
 import '@mestuka/rjsf-visual-builder/style.css'
 
 function EditFormPage() {
-  async function handleSave(document: BuilderDocument) {
-    await api.saveForm(document) // schema, uiSchema, formData
-    myToastLibrary.success('Form saved!') // toasts are your responsibility, not the library's
-  }
-
   return (
     <RjsfFormBuilder
       schema={existingSchema}
       uiSchema={existingUiSchema}
       formData={existingFormData}
-      onSave={handleSave}
     />
   )
 }
@@ -56,19 +50,22 @@ function EditFormPage() {
 | `schema`                    | `RJSFSchema`                                       | Initial JSON Schema to load into the builder.                                                                     |
 | `uiSchema`                  | `UiSchema` (optional)                              | Initial RJSF uiSchema. Defaults to `{}`.                                                                          |
 | `formData`                  | `unknown` (optional)                                | Initial sample data shown in the live preview.                                                                    |
-| `onSave`                    | `(document: BuilderDocument) => void \| Promise<void>` (optional) | Called with the current `{ schema, uiSchema, formData }` when the user clicks Save. If omitted, the Save button is not rendered. When provided, the button is disabled until changes exist and while a returned promise is pending. |
-| `saveLabel`                 | `string` (optional)                                | Text for the save button. Defaults to `"Save"`.                                                                   |
-| `showDownloadButton`        | `boolean` (optional)                              | When `true`, renders a Download button to the right of Save that downloads the current `{ schema, uiSchema, formData }` document as `rjsf-form.json`. Defaults to `false`. |
+| `onChange`                  | `(document: BuilderDocument) => void` (optional)    | Called after the builder mounts and whenever the edited schema, uiSchema, or preview form data changes. Use this to track dirty state or provide the current document to host-owned Save and Download controls. |
 | `onPreviewSubmit`           | `(formData: unknown) => void` (optional)            | Called when the embedded live-preview form is submitted (separate from Save).                                     |
 | `onPreviewValidationError`  | `() => void` (optional)                             | Called when the live-preview form fails RJSF validation on submit.                                                |
 | `widgets`                   | `RegistryWidgetsType` (optional)                    | Custom RJSF widgets, keyed by the name referenced via `ui:widget`. Passed through to the live preview's `<Form>`, and offered as extra choices in the Inspector's Widget picker for string/number/integer/boolean fields. |
 | `fields`                    | `RegistryFieldsType` (optional)                     | Custom RJSF field components, keyed by the name referenced via `ui:field`. Passed through to the live preview's `<Form>`, and offered in the Inspector's Field component picker (available for any selected field). |
 | `templates`                 | `Partial<TemplatesType>` (optional)                 | Custom RJSF templates (e.g. `FieldTemplate`, `ArrayFieldTemplate`), passed straight through to the live preview's `<Form>`. |
-| `className`                 | `string` (optional)                                 | Extra classes for the component's root element.                                                                   |
+| `className`                 | `string` (optional)                                 | Additional CSS classes applied to the builder's root element. Use this for host layout or custom styling; the builder's built-in classes are preserved. |
 | `style`                     | `CSSProperties` (optional, custom properties allowed) | Inline styles for the component's root element — the easiest way to override the `--rvb-*` theme variables for a single instance. See [Theming](#theming). |
 
-**The component never shows toasts or notifications itself.** `onSave`, `onPreviewSubmit`, and
-`onPreviewValidationError` are the hooks for your app to notify the user however it likes.
+The component does not render Save or Download controls. The host application owns those
+controls and can use its own state or callbacks to persist/export the current document.
+The component never shows toasts or notifications itself.
+
+`onChange` receives the complete `{ schema, uiSchema, formData }` document. It is called once
+with the initial document after mount and again whenever any part of the document changes, making
+it suitable for tracking whether the builder has unsaved changes.
 
 `RegistryWidgetsType`, `RegistryFieldsType`, and `TemplatesType` are re-exported from
 `rjsf-visual-builder` for convenience (they're just the `@rjsf/utils` types):
@@ -79,7 +76,7 @@ import { RjsfFormBuilder, type RegistryWidgetsType, type RegistryFieldsType } fr
 const widgets: RegistryWidgetsType = { color: ColorWidget }
 const fields: RegistryFieldsType = { highlighted: HighlightedField }
 
-<RjsfFormBuilder schema={schema} onSave={handleSave} widgets={widgets} fields={fields} />
+<RjsfFormBuilder schema={schema} widgets={widgets} fields={fields} />
 ```
 
 ### State model
@@ -89,7 +86,7 @@ const fields: RegistryFieldsType = { highlighted: HighlightedField }
 builder — to load a different schema, remount the component with a different `key`:
 
 ```tsx
-<RjsfFormBuilder key={formId} schema={schema} onSave={handleSave} />
+<RjsfFormBuilder key={formId} schema={schema} />
 ```
 
 ### Theming
@@ -114,7 +111,7 @@ styles. All of it is designed to be easy to override from the host app:
   same app need different themes:
 
   ```tsx
-  <RjsfFormBuilder schema={schema} onSave={handleSave} style={{ '--rvb-primary': '#2563eb' }} />
+  <RjsfFormBuilder schema={schema} style={{ '--rvb-primary': '#2563eb' }} />
   ```
 
 - **Dark mode** — following the common shadcn/ui convention, add a `.dark` class to any ancestor
@@ -134,7 +131,7 @@ Available custom properties (all optional to override — any you don't set keep
 | `--rvb-background` / `--rvb-foreground` | Page-level background/text color     |
 | `--rvb-card` / `--rvb-card-foreground`  | Panel backgrounds (Inspector, canvas, preview) |
 | `--rvb-popover` / `--rvb-popover-foreground` | Dropdown/select menu surfaces    |
-| `--rvb-primary` / `--rvb-primary-foreground` | Save button, submit button, active states |
+| `--rvb-primary` / `--rvb-primary-foreground` | Submit button and active states |
 | `--rvb-secondary` / `--rvb-secondary-foreground` | Secondary buttons/badges       |
 | `--rvb-muted` / `--rvb-muted-foreground` | Placeholder/help text, subtle backgrounds |
 | `--rvb-accent` / `--rvb-accent-foreground` | Hover/selected states                  |
@@ -242,8 +239,8 @@ load different starting schemas, buttons to download the last-saved document as 
 a standalone React snippet, and a tiny `color` custom widget + `highlighted` custom field
 (`src/demo/customWidgets.tsx`) passed in via the `widgets`/`fields` props to demonstrate that
 consumers can bring their own RJSF widgets/fields. It uses `sonner` for toasts around
-`onSave`/`onPreviewSubmit`/`onPreviewValidationError` purely to demonstrate that the library
-leaves notifications to the host app — none of `src/demo` is part of the published package.
+`onPreviewSubmit`/`onPreviewValidationError` purely to demonstrate that the library leaves
+notifications to the host app — none of `src/demo` is part of the published package.
 
 ## Visual builder limitations
 

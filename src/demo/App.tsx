@@ -4,7 +4,6 @@ import { RjsfFormBuilder, type BuilderDocument } from '@/lib'
 import { Toolbar } from '@/demo/Toolbar'
 import { defaultPreset, findPreset } from '@/demo/presets'
 import { copyToClipboard, downloadDocumentAsJson, generateStandaloneComponent } from '@/demo/export'
-import { saveDocumentToStorage } from '@/demo/storage'
 import { demoFields, demoWidgets } from '@/demo/customWidgets'
 
 /**
@@ -18,7 +17,7 @@ function App() {
   const [activePresetId, setActivePresetId] = useState<string | null>(defaultPreset.id)
   const [builderKey, setBuilderKey] = useState(0)
   const [initialDocument, setInitialDocument] = useState<BuilderDocument>(defaultPreset.document)
-  const [lastSaved, setLastSaved] = useState<BuilderDocument>(defaultPreset.document)
+  const [lastSaved] = useState<BuilderDocument>(defaultPreset.document)
 
   function handleSelectPreset(id: string) {
     const preset = findPreset(id)
@@ -29,12 +28,6 @@ function App() {
     // mount, so remount it (via `key`) to load a different starting schema.
     setBuilderKey((key) => key + 1)
     toast.info(`Loaded preset: ${preset.name}`)
-  }
-
-  function handleSave(document: BuilderDocument) {
-    saveDocumentToStorage(document)
-    setLastSaved(document)
-    toast.success('Saved.')
   }
 
   function handleDownloadJson() {
@@ -64,7 +57,6 @@ function App() {
           schema={initialDocument.schema}
           uiSchema={initialDocument.uiSchema}
           formData={initialDocument.formData}
-          onSave={handleSave}
           widgets={demoWidgets}
           fields={demoFields}
           onPreviewSubmit={(formData) => {
@@ -72,7 +64,6 @@ function App() {
             toast.success('Form submitted — see console for the data.')
           }}
           onPreviewValidationError={() => toast.error('Form has validation errors.')}
-          showDownloadButton
         />
       </main>
       <Toaster richColors position="bottom-right" />
