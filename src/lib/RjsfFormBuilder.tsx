@@ -26,8 +26,8 @@ import { Palette } from './components/visual/Palette'
 import type { BuilderDocument } from './types'
 
 export interface RjsfFormBuilderProps {
-  /** Initial JSON Schema to load into the builder. */
-  schema: RJSFSchema
+  /** Initial JSON Schema to load into the builder. Defaults to an empty object schema. */
+  schema?: RJSFSchema
   /** Initial RJSF uiSchema. Defaults to `{}`. */
   uiSchema?: UiSchema
   /** Initial sample form data shown in the live preview. */
@@ -132,7 +132,7 @@ export function RjsfFormBuilder({
   className,
   style,
 }: RjsfFormBuilderProps) {
-  const [initialTree] = useState(() => schemaToTree(schema, uiSchema ?? {}))
+  const [initialTree] = useState(() => schemaToTree(schema ?? {}, uiSchema ?? {}))
   const [tree, rawDispatch] = useReducer(builderTreeReducer, initialTree)
   const [previewFormData, setPreviewFormData] = useState<unknown>(formData ?? {})
   const [selection, setSelection] = useState<BuilderSelection>(undefined)

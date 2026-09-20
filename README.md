@@ -49,7 +49,7 @@ function EditFormPage() {
 
 | Prop                       | Type                                              | Description                                                                                                    |
 | --------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `schema`                    | `RJSFSchema`                                       | Initial JSON Schema to load into the builder.                                                                     |
+| `schema`                    | `RJSFSchema` (optional)                            | Initial JSON Schema to load into the builder. Defaults to an empty object schema when omitted or undefined.       |
 | `uiSchema`                  | `UiSchema` (optional)                              | Initial RJSF uiSchema. Defaults to `{}`.                                                                          |
 | `formData`                  | `unknown` (optional)                                | Initial sample data shown in the live preview.                                                                    |
 | `onChange`                  | `(document: BuilderDocument) => void` (optional)    | Called after the builder mounts and whenever the edited schema, uiSchema, or preview form data changes. Use this to track dirty state or provide the current document to host-owned Save and Download controls. |
