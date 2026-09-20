@@ -16,6 +16,8 @@ The builder opens in **Visual** mode by default and includes a **Code** tab with
 `{ schema, uiSchema, formData }` JSON document beside a live RJSF form preview. Code changes are
 applied explicitly with the **Apply changes** button; invalid JSON leaves the current visual
 document and rendered form unchanged.
+Visual panels are collapsible and reorderable, and open panels can be resized horizontally by
+dragging the separators between them.
 
 ## Install
 

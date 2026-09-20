@@ -8,7 +8,7 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core'
 import type { RegistryFieldsType, RegistryWidgetsType, RJSFSchema, TemplatesType, UiSchema } from '@rjsf/utils'
-import { useEffect, useMemo, useReducer, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useReducer, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import { cn } from 'cn'
 import { AlertCircle, Code2, Eye } from 'lucide-react'
 import { schemaToTree, treeToSchema, treeToUiSchema } from './visual/convert'
@@ -78,6 +78,33 @@ interface ActiveDrag {
 
 type BuilderView = 'visual' | 'code'
 type VisualPanelId = 'palette' | 'canvas' | 'preview' | 'inspector'
+type PanelWidths = Partial<Record<VisualPanelId, number>>
+interface PanelResizeState {
+  panel: VisualPanelId
+  startX: number
+  startWidth: number
+}
+
+function ResizeHandle({
+  panel,
+  order,
+  onPointerDown,
+}: {
+  panel: VisualPanelId
+  order: number
+  onPointerDown: (panel: VisualPanelId, event: ReactPointerEvent<HTMLDivElement>) => void
+}) {
+  return (
+    <div
+      role="separator"
+      aria-orientation="vertical"
+      aria-label={`Resize ${panel} panel`}
+      className="hidden cursor-col-resize rounded-sm bg-border/60 transition-colors hover:bg-primary lg:block"
+      style={{ order }}
+      onPointerDown={(event) => onPointerDown(panel, event)}
+    />
+  )
+}
 
 /** `CSSProperties` widened to also accept CSS custom properties (e.g. `--rvb-primary`) without a cast. */
 type StyleWithCustomProperties = CSSProperties & { [key: `--${string}`]: string | number | undefined }
@@ -118,6 +145,9 @@ export function RjsfFormBuilder({
   const [view, setView] = useState<BuilderView>('visual')
   const [codeText, setCodeText] = useState('')
   const [codeError, setCodeError] = useState<string | null>(null)
+  const [panelWidths, setPanelWidths] = useState<PanelWidths>({})
+  const [panelResize, setPanelResize] = useState<PanelResizeState | null>(null)
+  const visualGridRef = useRef<HTMLDivElement>(null)
   const currentSchema = useMemo(() => treeToSchema(tree), [tree])
   const currentUiSchema = useMemo(() => treeToUiSchema(tree), [tree])
   const currentDocument = useMemo<BuilderDocument>(
@@ -129,6 +159,53 @@ export function RjsfFormBuilder({
   const hasCollapsedVisualPanel = !isPaletteOpen || !isCanvasOpen || !isPreviewOpen || !isInspectorOpen
   const allVisualPanelsCollapsed = !isPaletteOpen && !isCanvasOpen && !isPreviewOpen && !isInspectorOpen
   const [draggingPanel, setDraggingPanel] = useState<VisualPanelId | null>(null)
+
+  useEffect(() => {
+    if (!panelResize) return
+
+    const handlePointerMove = (event: PointerEvent) => {
+      const panelElement = visualGridRef.current?.querySelector<HTMLElement>(
+        `[data-rvb-panel-id="${panelResize.panel}"]`,
+      )
+      const gridElement = visualGridRef.current
+      if (!panelElement || !gridElement) return
+
+      const openPanelIds = panelOrder.filter(
+        (panel) =>
+          (panel === 'palette' && isPaletteOpen) ||
+          (panel === 'canvas' && isCanvasOpen) ||
+          (panel === 'preview' && isPreviewOpen) ||
+          (panel === 'inspector' && isInspectorOpen),
+      )
+      const panelIndex = openPanelIds.indexOf(panelResize.panel)
+      const panelsAfter = Math.max(0, openPanelIds.length - panelIndex - 1)
+      const reservedWidth = panelsAfter * 180 + (panelsAfter + 1) * 8 + panelsAfter * 16
+      const maxWidth = Math.max(
+        180,
+        gridElement.getBoundingClientRect().right - panelElement.getBoundingClientRect().left - reservedWidth,
+      )
+      const nextWidth = Math.min(maxWidth, Math.max(180, panelResize.startWidth + event.clientX - panelResize.startX))
+      setPanelWidths((widths) => ({ ...widths, [panelResize.panel]: nextWidth }))
+    }
+    const handlePointerUp = () => setPanelResize(null)
+
+    window.addEventListener('pointermove', handlePointerMove)
+    window.addEventListener('pointerup', handlePointerUp)
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove)
+      window.removeEventListener('pointerup', handlePointerUp)
+    }
+  }, [panelResize])
+
+  const startPanelResize = (panel: VisualPanelId, event: ReactPointerEvent<HTMLDivElement>) => {
+    const panelElement = visualGridRef.current?.querySelector<HTMLElement>(`[data-rvb-panel-id="${panel}"]`)
+    setPanelResize({
+      panel,
+      startX: event.clientX,
+      startWidth: panelElement?.getBoundingClientRect().width ?? (panel === 'palette' ? 220 : panel === 'inspector' ? 260 : 400),
+    })
+    event.preventDefault()
+  }
 
   useEffect(() => {
     onChange?.(currentDocument)
@@ -328,6 +405,7 @@ export function RjsfFormBuilder({
             onDragCancel={() => setActiveDrag(null)}
           >
             <div
+              ref={visualGridRef}
               className={cn(
                 'grid h-full min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[var(--rvb-visual-columns)]',
               )}
@@ -335,9 +413,16 @@ export function RjsfFormBuilder({
                 {
                   '--rvb-visual-columns': [
                     hasCollapsedVisualPanel ? '160px' : '0px',
-                    ...panelOrder
-                      .filter(panelIsOpen)
-                      .map((panel) => (panel === 'palette' ? '220px' : panel === 'inspector' ? '260px' : 'minmax(0, 1fr)')),
+                  ...panelOrder.filter(panelIsOpen).flatMap((panel) => [
+                    panelWidths[panel]
+                      ? `${panelWidths[panel]}px`
+                      : panel === 'palette'
+                        ? '220px'
+                        : panel === 'inspector'
+                          ? '260px'
+                          : 'minmax(240px, 1fr)',
+                    '8px',
+                  ]),
                     allVisualPanelsCollapsed ? 'minmax(0, 1fr)' : null,
                   ]
                     .filter(Boolean)
@@ -379,61 +464,65 @@ export function RjsfFormBuilder({
                 </div>
               ) : null}
               {isPaletteOpen ? (
-                <Palette
-                  isOpen
-                  onOpenChange={setIsPaletteOpen}
-                  order={panelPosition('palette') + 1}
-                  panelId="palette"
-                  onPanelDragStart={(panel) => setDraggingPanel((panel || null) as VisualPanelId | null)}
-                  onPanelDrop={handlePanelDrop}
-                />
+                <>
+                  <Palette isOpen onOpenChange={setIsPaletteOpen} order={panelPosition('palette') * 2 + 1} panelId="palette" />
+                  <ResizeHandle panel="palette" order={panelPosition('palette') * 2 + 2} onPointerDown={startPanelResize} />
+                </>
               ) : null}
               {isCanvasOpen ? (
                 <CollapsiblePanel
                   title="Form Canvas"
                   isOpen
                   onOpenChange={setIsCanvasOpen}
-                  order={panelPosition('canvas') + 1}
+                  order={panelPosition('canvas') * 2 + 1}
                   panelId="canvas"
+                  className="cursor-pointer"
                   onPanelDragStart={(panel) => setDraggingPanel((panel || null) as VisualPanelId | null)}
                   onPanelDrop={handlePanelDrop}
                 >
-                  <div className="h-full min-h-0 overflow-y-auto rounded-md bg-muted/30 p-3">
+                  <div className="h-full min-h-0 cursor-pointer overflow-y-auto rounded-md bg-muted/30 p-3">
                     <NodeList containerId="root" nodes={tree.children} emptyLabel="Drag fields here from the palette" />
                   </div>
                 </CollapsiblePanel>
               ) : null}
+              {isCanvasOpen ? (
+                <ResizeHandle panel="canvas" order={panelPosition('canvas') * 2 + 2} onPointerDown={startPanelResize} />
+              ) : null}
               {isPreviewOpen ? (
-                <FormPreviewPanel
-                  schema={currentSchema}
-                  uiSchema={currentUiSchema}
-                  formData={previewFormData}
-                  onFormDataChange={handlePreviewFormDataChange}
-                  onSubmit={onPreviewSubmit}
-                  onValidationError={onPreviewValidationError}
-                  widgets={widgets}
-                  fields={fields}
-                  templates={templates}
-                  isOpen
-                  onOpenChange={setIsPreviewOpen}
-                  order={panelPosition('preview') + 1}
-                  panelId="preview"
-                  onPanelDragStart={(panel) => setDraggingPanel((panel || null) as VisualPanelId | null)}
-                  onPanelDrop={handlePanelDrop}
-                />
+                <>
+                  <FormPreviewPanel
+                    schema={currentSchema}
+                    uiSchema={currentUiSchema}
+                    formData={previewFormData}
+                    onFormDataChange={handlePreviewFormDataChange}
+                    onSubmit={onPreviewSubmit}
+                    onValidationError={onPreviewValidationError}
+                    widgets={widgets}
+                    fields={fields}
+                    templates={templates}
+                    isOpen
+                    onOpenChange={setIsPreviewOpen}
+                    order={panelPosition('preview') * 2 + 1}
+                    panelId="preview"
+                    onPanelDragStart={(panel) => setDraggingPanel((panel || null) as VisualPanelId | null)}
+                  />
+                  <ResizeHandle panel="preview" order={panelPosition('preview') * 2 + 2} onPointerDown={startPanelResize} />
+                </>
               ) : null}
               {isInspectorOpen ? (
-                <Inspector
-                  tree={tree}
-                  availableWidgets={widgetNames}
-                  availableFields={fieldNames}
-                  isOpen
-                  onOpenChange={setIsInspectorOpen}
-                  order={panelPosition('inspector') + 1}
-                  panelId="inspector"
-                  onPanelDragStart={(panel) => setDraggingPanel((panel || null) as VisualPanelId | null)}
-                  onPanelDrop={handlePanelDrop}
-                />
+                <>
+                  <Inspector
+                    tree={tree}
+                    availableWidgets={widgetNames}
+                    availableFields={fieldNames}
+                    isOpen
+                    onOpenChange={setIsInspectorOpen}
+                    order={panelPosition('inspector') * 2 + 1}
+                    panelId="inspector"
+                    onPanelDragStart={(panel) => setDraggingPanel((panel || null) as VisualPanelId | null)}
+                  />
+                  <ResizeHandle panel="inspector" order={panelPosition('inspector') * 2 + 2} onPointerDown={startPanelResize} />
+                </>
               ) : null}
             </div>
             <DragOverlay>

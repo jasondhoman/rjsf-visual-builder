@@ -36,6 +36,7 @@ export function CollapsiblePanel({
   if (!isOpen) {
     return (
       <div
+        data-rvb-panel-id={panelId}
         ref={droppable.setNodeRef}
         className={cn(
           'flex h-fit min-h-10 w-full items-center justify-start gap-1 rounded-md border bg-card px-2 py-2 text-xs font-medium text-muted-foreground shadow-sm hover:text-foreground',
@@ -69,6 +70,7 @@ export function CollapsiblePanel({
 
   return (
     <section
+      data-rvb-panel-id={panelId}
       className={cn(
         'flex min-h-0 flex-col rounded-md border bg-card',
         draggable.isDragging && 'opacity-50 ring-2 ring-primary',

@@ -23,6 +23,7 @@ export function Palette({
   if (!isOpen) {
     return (
       <div
+        data-rvb-panel-id={panelId}
         ref={droppable.setNodeRef}
         className={cn(
           'flex h-fit w-full items-center justify-start gap-1 rounded-md border bg-card px-2 py-2 text-xs font-medium text-muted-foreground shadow-sm hover:text-foreground',
@@ -55,6 +56,7 @@ export function Palette({
 
   return (
     <aside
+      data-rvb-panel-id={panelId}
       className={cn(
         'flex h-full min-h-0 flex-col gap-1 overflow-y-auto rounded-md border bg-card p-2 shadow-sm',
         draggable.isDragging && 'opacity-50 ring-2 ring-primary',
