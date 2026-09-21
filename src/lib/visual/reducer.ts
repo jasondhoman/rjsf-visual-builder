@@ -215,7 +215,8 @@ export function builderTreeReducer(tree: BuilderTree, action: BuilderAction): Bu
         if (action.containerId.startsWith('arrayitem:')) return [action.node]
         const index = action.index ?? children.length
         const next = children.slice()
-        next.splice(index, 0, action.node)
+        const node = { ...action.node, key: uniqueKey(action.node.key, children) }
+        next.splice(index, 0, node)
         return next
       })
 

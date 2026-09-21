@@ -480,8 +480,13 @@ export function RjsfFormBuilder({
                   onPanelDragStart={(panel) => setDraggingPanel((panel || null) as VisualPanelId | null)}
                   onPanelDrop={handlePanelDrop}
                 >
-                  <div className="h-full min-h-0 cursor-pointer overflow-y-auto rounded-md bg-muted/30 p-3">
-                    <NodeList containerId="root" nodes={tree.children} emptyLabel="Drag fields here from the palette" />
+                  <div className="flex h-full min-h-0 cursor-pointer flex-col overflow-y-auto rounded-md bg-muted/30 p-3">
+                    <NodeList
+                      containerId="root"
+                      nodes={tree.children}
+                      emptyLabel="Drag fields here from the palette"
+                      fill
+                    />
                   </div>
                 </CollapsiblePanel>
               ) : null}

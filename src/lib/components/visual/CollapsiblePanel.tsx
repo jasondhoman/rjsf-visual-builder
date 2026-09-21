@@ -47,7 +47,7 @@ export function CollapsiblePanel({
       >
         <button
           type="button"
-          className="flex min-w-0 flex-1 items-center gap-1 text-left"
+          className="flex min-w-0 flex-1 items-center gap-1 text-left rvb-panel-title"
           aria-expanded={false}
           aria-label={`Open ${title.toLowerCase()}`}
           onClick={() => onOpenChange(true)}
@@ -57,7 +57,7 @@ export function CollapsiblePanel({
         </button>
         <button
           type="button"
-          className="cursor-grab touch-none rounded p-1 hover:bg-accent"
+          className="cursor-grab touch-none rounded p-1 hover:bg-accent rvb-panel-drag-handle"
           aria-label={`Drag ${title.toLowerCase()}`}
           {...draggable.attributes}
           {...draggable.listeners}

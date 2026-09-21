@@ -9,6 +9,7 @@ interface NodeListProps {
   nodes: FieldNode[]
   emptyLabel: string
   compact?: boolean
+  fill?: boolean
 }
 
 /**
@@ -17,7 +18,7 @@ interface NodeListProps {
  * branch's properties — every "container" in the tree renders through this
  * same component.
  */
-export function NodeList({ containerId, nodes, emptyLabel, compact }: NodeListProps) {
+export function NodeList({ containerId, nodes, emptyLabel, compact, fill }: NodeListProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: containerId,
     data: { type: 'container', containerId },
@@ -30,6 +31,7 @@ export function NodeList({ containerId, nodes, emptyLabel, compact }: NodeListPr
         'flex min-h-16 flex-col gap-2 rounded-md border border-dashed p-2 transition-colors',
         isOver && 'border-primary bg-primary/5',
         compact && 'min-h-10',
+        fill && 'flex-1',
       )}
     >
       {nodes.length === 0 ? (
