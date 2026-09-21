@@ -125,11 +125,33 @@ styles. All of it is designed to be easy to override from the host app:
   can also reach it with a plain CSS selector (e.g. `.my-wrapper .rvb-root`) if you'd prefer that
   over `:where`-based overrides.
 
+- **Full-element overrides, not just colors** — every built-in rule in the library (design tokens,
+  button styling, and the live preview's plain-HTML form controls) is written inside `:where(...)`,
+  which carries zero CSS specificity. That means *any* ordinary selector you write for the same
+  element — `.rvb-root button`, `.rvb-root input`, `.rvb-root .rvb-root` — wins automatically,
+  regardless of whether your stylesheet loads before or after the library's. There's no need to
+  reach for `!important` or increase selector specificity to brand buttons, inputs, borders, or
+  radii to match your design system:
+
+  ```css
+  /* your-app.css — re-skins every button and input the builder renders */
+  .rvb-root button {
+    border-radius: 999px;
+    font-weight: 600;
+  }
+  .rvb-root input,
+  .rvb-root select,
+  .rvb-root textarea {
+    border-width: 2px;
+  }
+  ```
+
 Available custom properties (all optional to override — any you don't set keep their default):
 
 | Variable                        | Purpose                                  |
 | -------------------------------- | ------------------------------------------ |
 | `--rvb-radius`                   | Base corner radius (buttons, inputs, cards) |
+| `--rvb-font-family`              | Font family for every element in the component, including the live preview's form controls. Defaults to `inherit` (your app's font). |
 | `--rvb-background` / `--rvb-foreground` | Page-level background/text color     |
 | `--rvb-card` / `--rvb-card-foreground`  | Panel backgrounds (Inspector, canvas, preview) |
 | `--rvb-popover` / `--rvb-popover-foreground` | Dropdown/select menu surfaces    |
@@ -142,10 +164,10 @@ Available custom properties (all optional to override — any you don't set keep
 | `--rvb-ring`                      | Focus ring color                          |
 
 The live RJSF preview (plain HTML form controls styled by `rjsf-preview.css`) reads from the same
-variables, so overriding them re-themes the whole component consistently — palette, canvas,
-inspector, and preview alike. If you need to fully replace the preview's look (e.g. to match a
-specific design system), pass your own `templates` prop instead of relying on the built-in
-minimal styling.
+variables — including `--rvb-font-family` — so overriding them re-themes the whole component
+consistently — palette, canvas, inspector, and preview alike. If you need to fully replace the
+preview's look (e.g. to match a specific design system), pass your own `templates` prop instead of
+relying on the built-in minimal styling.
 
 ## Tech stack
 

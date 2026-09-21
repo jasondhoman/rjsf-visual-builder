@@ -20,6 +20,7 @@
 
 :where(.rvb-root) {
   --rvb-radius: 0.5rem;
+  --rvb-font-family: inherit;
   --rvb-background: oklch(1 0 0);
   --rvb-foreground: oklch(0.145 0 0);
   --rvb-card: oklch(1 0 0);
@@ -63,10 +64,26 @@
 
 .rvb-root {
   color: var(--rvb-foreground);
+  font-family: var(--rvb-font-family);
 }
 
-/* Keep the library's shadcn buttons usable when a host app has global button rules. */
-.rvb-root button[data-slot='button'] {
+/*
+ * Form controls (button/input/select/textarea) don't inherit font-family by
+ * default in browsers. Without this, the library's own controls — and the
+ * plain HTML controls rendered by the live RJSF preview — would ignore
+ * `--rvb-font-family` and fall back to the browser's default UI font.
+ */
+:where(.rvb-root button, .rvb-root input, .rvb-root select, .rvb-root textarea) {
+  font-family: inherit;
+}
+
+/*
+ * Fallback styling for the library's shadcn-style buttons, kept inside
+ * `:where(...)` (zero specificity, same as the variables above) so a host
+ * app's own button rules — or a simple override targeting these same
+ * selectors — always win regardless of stylesheet load order.
+ */
+:where(.rvb-root button[data-slot='button']) {
   display: inline-flex;
   height: 2.25rem;
   flex-shrink: 0;
@@ -85,35 +102,35 @@
   transition: background-color 150ms, color 150ms, border-color 150ms;
 }
 
-.rvb-root button[data-slot='button'][data-variant='outline'] {
+:where(.rvb-root button[data-slot='button'][data-variant='outline']) {
   border-color: var(--rvb-border);
   color: var(--rvb-foreground);
   background-color: var(--rvb-background);
 }
 
-.rvb-root button[data-slot='button'][data-variant='secondary'] {
+:where(.rvb-root button[data-slot='button'][data-variant='secondary']) {
   color: var(--rvb-secondary-foreground);
   background-color: var(--rvb-secondary);
 }
 
-.rvb-root button[data-slot='button'][data-variant='ghost'],
-.rvb-root button[data-slot='button'][data-variant='link'] {
+:where(.rvb-root button[data-slot='button'][data-variant='ghost']),
+:where(.rvb-root button[data-slot='button'][data-variant='link']) {
   color: var(--rvb-foreground);
   background-color: transparent;
 }
 
-.rvb-root button[data-slot='button'][data-variant='link'] {
+:where(.rvb-root button[data-slot='button'][data-variant='link']) {
   color: var(--rvb-primary);
   text-decoration: underline;
   text-underline-offset: 0.25rem;
 }
 
-.rvb-root button[data-slot='button']:disabled {
+:where(.rvb-root button[data-slot='button']:disabled) {
   pointer-events: none;
   opacity: 0.5;
 }
 
-.rvb-root button[data-slot='button'] > svg {
+:where(.rvb-root button[data-slot='button'] > svg) {
   pointer-events: none;
   flex-shrink: 0;
   width: 1rem;
