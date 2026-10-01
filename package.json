@@ -1,5 +1,10 @@
 {
   "name": "@mestuka/rjsf-visual-builder",
+  "author": {
+    "name": "Jay Homan",
+    "email": "jasondhoman@gmail.com",
+    "url": "https://github.com/jasondhoman"
+  },
   "version": "0.1.18",
   "description": "A drag-and-drop visual builder component for react-jsonschema-form (RJSF).",
   "type": "module",

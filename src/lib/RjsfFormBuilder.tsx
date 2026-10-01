@@ -413,16 +413,16 @@ export function RjsfFormBuilder({
                 {
                   '--rvb-visual-columns': [
                     hasCollapsedVisualPanel ? '160px' : '0px',
-                  ...panelOrder.filter(panelIsOpen).flatMap((panel) => [
-                    panelWidths[panel]
-                      ? `${panelWidths[panel]}px`
-                      : panel === 'palette'
-                        ? '220px'
-                        : panel === 'inspector'
-                          ? '260px'
-                          : 'minmax(240px, 1fr)',
-                    '8px',
-                  ]),
+                    ...panelOrder.filter(panelIsOpen).flatMap((panel) => [
+                      panelWidths[panel]
+                        ? `${panelWidths[panel]}px`
+                        : panel === 'palette'
+                          ? '220px'
+                          : panel === 'inspector'
+                            ? '260px'
+                            : 'minmax(240px, 1fr)',
+                      '8px',
+                    ]),
                     allVisualPanelsCollapsed ? 'minmax(0, 1fr)' : null,
                   ]
                     .filter(Boolean)
@@ -439,22 +439,16 @@ export function RjsfFormBuilder({
                     }
                     if (panel === 'canvas') {
                       return (
-                        <CollapsiblePanel key={panel} title="Form Canvas" isOpen={false} onOpenChange={setIsCanvasOpen}>
-                          <></>
-                        </CollapsiblePanel>
+                        <CollapsiblePanel key={panel} title="Form Canvas" isOpen={false} onOpenChange={setIsCanvasOpen} />
                       )
                     }
                     if (panel === 'preview') {
                       return (
-                        <CollapsiblePanel key={panel} title="Form Preview" isOpen={false} onOpenChange={setIsPreviewOpen}>
-                          <></>
-                        </CollapsiblePanel>
+                        <CollapsiblePanel key={panel} title="Form Preview" isOpen={false} onOpenChange={setIsPreviewOpen} />
                       )
                     }
                     return (
-                      <CollapsiblePanel key={panel} title="Inspector" isOpen={false} onOpenChange={setIsInspectorOpen}>
-                        <></>
-                      </CollapsiblePanel>
+                      <CollapsiblePanel key={panel} title="Inspector" isOpen={false} onOpenChange={setIsInspectorOpen} />
                     )
                   })}
               </div>

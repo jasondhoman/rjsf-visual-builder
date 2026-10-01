@@ -1,13 +1,12 @@
 import { useDraggable, useDroppable } from '@dnd-kit/core'
 import { ChevronDown, ChevronRight, GripVertical } from 'lucide-react'
-import type { ReactNode } from 'react'
+import type { PropsWithChildren } from 'react'
 import { cn } from 'cn'
 
 interface CollapsiblePanelProps {
   title: string
   isOpen: boolean
   onOpenChange: (open: boolean) => void
-  children: ReactNode
   className?: string
   panelId?: string
   onPanelDragStart?: (panelId: string) => void
@@ -23,7 +22,7 @@ export function CollapsiblePanel({
   className,
   panelId,
   order,
-}: CollapsiblePanelProps) {
+}: PropsWithChildren<CollapsiblePanelProps>) {
   const draggable = useDraggable({
     id: `panel:${panelId}`,
     data: { type: 'panel', panelId },
